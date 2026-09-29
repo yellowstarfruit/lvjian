@@ -5,6 +5,7 @@ from openai import OpenAI
 import chromadb
 from pypdf import PdfReader
 import docx
+from docx.oxml.ns import qn
 
 # ===================== 【配置区】 =====================
 API_KEY = st.secrets["DASHSCOPE_API_KEY"]
@@ -312,12 +313,21 @@ elif choice == "✍️ 申诉/协商文书生成":
             st.write("### 文书草稿：")
             st.write(draft)
             doc = docx.Document()
-            doc.add_heading('维权申诉书草稿', 0)
-            for para in draft.split('\n'):
-                if para.strip():
-                    doc.add_paragraph(para)
-            bio = io.BytesIO()
-            doc.save(bio)
+            style = doc.styles['Normal']
+            style.font.name = '宋体'
+            style._element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
+            heading = doc.add_heading('维权申诉书草稿', 0)
+            for run in heading.runs:
+                run.font.name = '黑体'
+                run._element.rPr.rFonts.set(qn('w:eastAsia'), '黑体')
+                for para in draft.split('\n'):
+                    if para.strip():
+                        p = doc.add_paragraph(para)
+                        for run in p.runs:
+                            run.font.name = '宋体'
+                            run._element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
+bio = io.BytesIO()
+doc.save(bio)
             st.download_button(
                 label=" 下载正式 Word 文档 (.docx)",
                 data=bio.getvalue(),
