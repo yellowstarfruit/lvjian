@@ -67,12 +67,21 @@ def read_pdf_text(path: str) -> str:
     return "\n".join(parts)
 
 
-def chat(prompt: str, system: str | None = None, temperature: float = 0.2) -> str:
-    """调用大模型对话。"""
+def chat_with_history(prompt: str, history: list = None, system: str = None, temperature: float = 0.2) -> str:
+    """支持多轮对话的请求函数"""
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
+    
+    # 加入历史对话（保留最近 3 轮，防止上下文太长消耗太多token）
+    if history:
+        for user_msg, bot_msg in history[-3:]:
+            messages.append({"role": "user", "content": user_msg})
+            messages.append({"role": "assistant", "content": bot_msg})
+            
+    # 加入当前问题
     messages.append({"role": "user", "content": prompt})
+    
     resp = client.chat.completions.create(
         model=CHAT_MODEL,
         messages=messages,
@@ -151,15 +160,42 @@ SYSTEM_PROMPT = (
 )
 
 
-# ===================== 功能 1：知识库问答 =====================
+# ===================== 功能 1：知识库问答（带记忆） =====================
 st.subheader(" 权益问题咨询")
-user_query = st.text_area("描述你的校园/实习权益问题：", height=120)
 
-if st.button("开始咨询") and user_query.strip():
+# 初始化聊天记录
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# 1. 展示之前的聊天记录
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
+        # 如果有引用文档，也展示出来
+        if "sources" in msg:
+            with st.expander("查看参考文档片段"):
+                for i, (txt, src) in enumerate(msg["sources"]):
+                    st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
+
+# 2. 接收用户输入（注意：这里换成了 st.chat_input，会有固定在底部的输入框）
+user_query = st.chat_input("描述你的校园/实习权益问题...")
+
+if user_query:
+    # 显示用户提问
+    with st.chat_message("user"):
+        st.write(user_query)
+    
+    # 获取历史对话，用于传给大模型
+    history_for_llm = [(m["content"], st.session_state.messages[i+1]["content"]) 
+                       for i, m in enumerate(st.session_state.messages) if m["role"] == "user" and i+1 < len(st.session_state.messages)]
+
     with st.spinner("AI 检索知识库并生成回答..."):
+        # 检索知识库
         hits = retrieve(collection, user_query, TOP_K)
+        
         if not hits:
-            st.warning("知识库暂未收录相关内容，无法回答。")
+            answer = "知识库暂未收录相关内容，无法回答。"
+            sources = []
         else:
             context = "\n\n".join(
                 f"【片段{i+1}｜来源：{src}】\n{txt}" for i, (txt, src) in enumerate(hits)
@@ -174,13 +210,24 @@ if st.button("开始咨询") and user_query.strip():
 
 要求：
 1. 用通俗语言解释，末尾注明引用来源；
-2. 文档没有相关内容就直接说"知识库暂未收录"，不要编造。"""
-            answer = chat(prompt, system=SYSTEM_PROMPT)
-            st.write("### 回答：")
+2. 文档没有相关内容就直接说"知识库暂未收录"，不要编造。
+3. 结合之前的对话历史理解用户的意图。"""
+            
+            # 调用带记忆的 chat 函数
+            answer = chat_with_history(prompt, history=history_for_llm, system=SYSTEM_PROMPT)
+            sources = hits
+
+        # 显示 AI 回答
+        with st.chat_message("assistant"):
             st.write(answer)
-            st.write("#### 参考文档片段：")
-            for i, (txt, src) in enumerate(hits):
-                st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
+            if sources:
+                with st.expander("查看参考文档片段"):
+                    for i, (txt, src) in enumerate(sources):
+                        st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
+        
+        # 3. 将本轮对话存入历史记录
+        st.session_state.messages.append({"role": "user", "content": user_query})
+        st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
 
 
 # ===================== 功能 2：上传 PDF 分析 =====================
