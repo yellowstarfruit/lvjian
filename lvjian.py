@@ -296,3 +296,9 @@ elif choice == "✍️ 申诉/协商文书生成":
             draft = chat_with_history(prompt, temperature=0.3)
             st.write("### 文书草稿：")
             st.write(draft)
+             st.download_button(
+        label=" 下载文书草稿（Word版）",
+        data=draft,
+        file_name="维权申诉书草稿.txt", # 或者 .doc
+        mime="text/plain"
+    )
