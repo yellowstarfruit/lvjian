@@ -1,4 +1,3 @@
-# lvjian.py —— 律简：大学生校园权益智能咨询助手
 import os
 import io
 import streamlit as st
@@ -8,7 +7,6 @@ from pypdf import PdfReader
 import docx
 
 # ===================== 【配置区】 =====================
-# 强烈建议用环境变量：Windows 下 set DASHSCOPE_API_KEY=sk-xxx
 API_KEY = st.secrets["DASHSCOPE_API_KEY"]
 API_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 CHAT_MODEL = "qwen-turbo"
@@ -21,15 +19,18 @@ COLLECTION_NAME = "lvjian_kb"
 CHUNK_SIZE = 800 # 文本切块大小（字符）
 CHUNK_OVERLAP = 100 # 块间重叠
 TOP_K = 3 # 检索返回条数
-EMBED_BATCH = 20 # 嵌入接口单次最大条数（通义上限 25，取 20 安全）
-# =====================================================
+EMBED_BATCH = 20 # 嵌入接口单次最大条数
 
 st.set_page_config(page_title="律简——大学生校园权益智能咨询助手")
 st.title("律简｜大学生校园权益智能咨询助手")
 st.info("⚠️ 本工具仅作为权益科普参考，不构成正式法律/行政意见")
 
 # 全局 OpenAI 客户端
-client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
+client = OpenAI(
+    api_key=API_KEY, 
+    base_url=API_BASE_URL,
+    timeout=30.0  #超过30秒自动断开
+)
 
 
 # ===================== 基础工具函数 =====================
@@ -74,8 +75,7 @@ def chat_with_history(prompt: str, history: list = None, system: str = None, tem
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
-    
-    # 加入历史对话（保留最近 3 轮，防止上下文太长消耗太多token）
+        
     if history:
         for user_msg, bot_msg in history[-3:]:
             messages.append({"role": "user", "content": user_msg})
@@ -99,11 +99,9 @@ def get_collection():
     db_client = chromadb.PersistentClient(path=PERSIST_DIR)
     collection = db_client.get_or_create_collection(name=COLLECTION_NAME)
 
-    # 已有数据就直接用
     if collection.count() > 0:
         return collection
 
-    # 否则从 knowledge 目录构建
     if not os.path.isdir(DOC_FOLDER):
         return collection
 
@@ -175,11 +173,10 @@ choice = st.sidebar.radio("请选择功能模块：", menu_options)
 if choice == " 权益问题咨询":
     st.subheader(" 权益问题咨询")
     
-    # 初始化聊天记录
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # 1. 展示之前的聊天记录（在中间区域）
+    # 1. 展示之前的聊天记录
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
@@ -188,7 +185,7 @@ if choice == " 权益问题咨询":
                     for i, (txt, src) in enumerate(msg["sources"]):
                         st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
 
-    # 2. 底部聊天输入框（固定在页面下方）
+    # 2. 底部聊天输入框
     user_query = st.chat_input("描述你的校园/实习权益问题...")
 
     if user_query:
@@ -223,7 +220,7 @@ if choice == " 权益问题咨询":
                 answer = chat_with_history(prompt, history=history_for_llm, system=SYSTEM_PROMPT)
                 sources = hits
 
-            # 显示 AI 回答（在中间区域）
+            # 显示 AI 回答
             with st.chat_message("assistant"):
                 st.write(answer)
                 if sources:
