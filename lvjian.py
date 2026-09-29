@@ -186,12 +186,12 @@ SYSTEM_PROMPT = (
 st.sidebar.title(" 律简导航")
 st.sidebar.info("大学生校园权益智能咨询助手")
 
-menu_options = [" 权益问题咨询", " 上传 PDF 文件分析", "✍️ 申诉/协商文书生成"]
+menu_options = [" 📖权益问题咨询", " 📄上传 PDF 文件分析", "✍️ 申诉/协商文书生成"]
 choice = st.sidebar.radio("请选择功能模块：", menu_options)
 
 # ===================== 功能 1：知识库问答（带记忆） =====================
-if choice == " 权益问题咨询":
-    st.subheader(" 权益问题咨询")
+if choice == " 📖权益问题咨询":
+    st.subheader(" 📖权益问题咨询")
     
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -251,8 +251,8 @@ if choice == " 权益问题咨询":
             st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
 
 # ===================== 功能 2：上传 PDF 文件分析 =====================
-elif choice == " 上传 PDF 文件分析":
-    st.subheader(" 上传 PDF 文件分析")
+elif choice == " 📄上传 PDF 文件分析":
+    st.subheader(" 📄上传 PDF 文件分析")
     st.write("上传实习合同、学校通知 PDF，AI 帮你找问题。")
     
     upload_file = st.file_uploader("点击选择 PDF 文件", type="pdf")
