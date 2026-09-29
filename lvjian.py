@@ -326,8 +326,8 @@ elif choice == "✍️ 申诉/协商文书生成":
                         for run in p.runs:
                             run.font.name = '宋体'
                             run._element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
-bio = io.BytesIO()
-doc.save(bio)
+            bio = io.BytesIO()
+            doc.save(bio)
             st.download_button(
                 label=" 下载正式 Word 文档 (.docx)",
                 data=bio.getvalue(),
