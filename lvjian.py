@@ -22,6 +22,64 @@ TOP_K = 3 # 检索返回条数
 EMBED_BATCH = 20 # 嵌入接口单次最大条数
 
 st.set_page_config(page_title="律简——大学生校园权益智能咨询助手")
+# 自定义 CSS 美化（放在 st.set_page_config 之后）
+st.markdown("""
+<style>
+    /* 1. 隐藏默认的 Streamlit 顶栏和页脚，让它更像独立产品 */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* 2. 美化主标题 */
+    h1 {
+        color: #1E3A8A; /* 深法律蓝 */
+        font-family: 'Microsoft YaHei', sans-serif;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+    
+    /* 3. 美化侧边栏 */
+    [data-testid="stSidebar"] {
+        background-color: #1E3A8A !important; /* 侧边栏深蓝背景 */
+    }
+    [data-testid="stSidebar"] * {
+        color: white !important; /* 侧边栏文字变白 */
+    }
+    [data-testid="stSidebar"] .stRadio label {
+        font-size: 16px;
+        padding: 8px 0;
+    }
+    
+    /* 4. 美化按钮 */
+    .stButton>button {
+        background-color: #1E3A8A;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        padding: 8px 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .stButton>button:hover {
+        background-color: #3B82F6;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transform: translateY(-2px);
+    }
+    
+    /* 5. 美化聊天输入框 */
+    .stChatInput textarea {
+        border-radius: 12px !important;
+        border: 1px solid #CBD5E1 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    
+    /* 6. 美化提示信息框 */
+    .stAlert {
+        border-radius: 10px;
+        border-left: 5px solid #1E3A8A;
+    }
+</style>
+""", unsafe_allow_html=True)
 st.title("律简｜大学生校园权益智能咨询助手")
 st.info("⚠️ 本工具仅作为权益科普参考，不构成正式法律/行政意见")
 
