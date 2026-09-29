@@ -1,9 +1,11 @@
 # lvjian.py —— 律简：大学生校园权益智能咨询助手
 import os
+import io
 import streamlit as st
 from openai import OpenAI
 import chromadb
 from pypdf import PdfReader
+import docx
 
 # ===================== 【配置区】 =====================
 # 强烈建议用环境变量：Windows 下 set DASHSCOPE_API_KEY=sk-xxx
@@ -296,9 +298,16 @@ elif choice == "✍️ 申诉/协商文书生成":
             draft = chat_with_history(prompt, temperature=0.3)
             st.write("### 文书草稿：")
             st.write(draft)
+            doc = docx.Document()
+            doc.add_heading('维权申诉书草稿', 0)
+            for para in draft.split('\n'):
+                if para.strip():
+                    doc.add_paragraph(para)
+            bio = io.BytesIO()
+            doc.save(bio)
             st.download_button(
-                label=" 下载文书草稿（Word版）",
-                data=draft,
-                file_name="维权申诉书草稿.txt", # 或者 .doc
-                mime="text/plain"
-    )
+                label=" 下载正式 Word 文档 (.docx)",
+                data=bio.getvalue(),
+                file_name="维权申诉书草稿.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
