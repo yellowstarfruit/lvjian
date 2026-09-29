@@ -21,13 +21,18 @@ CHUNK_OVERLAP = 100 # 块间重叠
 TOP_K = 3 # 检索返回条数
 EMBED_BATCH = 20 # 嵌入接口单次最大条数
 
-st.set_page_config(page_title="律简——大学生校园权益智能咨询助手")
-# 自定义 CSS 美化（放在 st.set_page_config 之后）
+# 关键修改：强制侧边栏展开，并设置宽屏模式
+st.set_page_config(
+    page_title="律简——大学生校园权益智能咨询助手",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# 安全的美化代码（不会隐藏侧边栏，只改变颜色和按钮样式）
 st.markdown("""
 <style>
-    /* 1. 隐藏默认的 Streamlit 顶栏和页脚，让它更像独立产品 */
+    /* 1. 隐藏默认的顶部菜单和页脚 */
     #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
     footer {visibility: hidden;}
     
     /* 2. 美化主标题 */
@@ -35,19 +40,14 @@ st.markdown("""
         color: #1E3A8A; /* 深法律蓝 */
         font-family: 'Microsoft YaHei', sans-serif;
         font-weight: 700;
-        letter-spacing: 1px;
     }
     
-    /* 3. 美化侧边栏 */
+    /* 3. 美化侧边栏（保留显示，仅改颜色） */
     [data-testid="stSidebar"] {
-        background-color: #1E3A8A !important; /* 侧边栏深蓝背景 */
+        background-color: #1E3A8A !important;
     }
     [data-testid="stSidebar"] * {
-        color: white !important; /* 侧边栏文字变白 */
-    }
-    [data-testid="stSidebar"] .stRadio label {
-        font-size: 16px;
-        padding: 8px 0;
+        color: white !important;
     }
     
     /* 4. 美化按钮 */
@@ -55,31 +55,13 @@ st.markdown("""
         background-color: #1E3A8A;
         color: white;
         border-radius: 8px;
-        border: none;
-        padding: 8px 16px;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .stButton>button:hover {
         background-color: #3B82F6;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        transform: translateY(-2px);
-    }
-    
-    /* 5. 美化聊天输入框 */
-    .stChatInput textarea {
-        border-radius: 12px !important;
-        border: 1px solid #CBD5E1 !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-    
-    /* 6. 美化提示信息框 */
-    .stAlert {
-        border-radius: 10px;
-        border-left: 5px solid #1E3A8A;
     }
 </style>
 """, unsafe_allow_html=True)
+
 st.title("律简｜大学生校园权益智能咨询助手")
 st.info("⚠️ 本工具仅作为权益科普参考，不构成正式法律/行政意见")
 
@@ -87,13 +69,11 @@ st.info("⚠️ 本工具仅作为权益科普参考，不构成正式法律/行
 client = OpenAI(
     api_key=API_KEY, 
     base_url=API_BASE_URL,
-    timeout=30.0  #超过30秒自动断开
+    timeout=30.0 #超过30秒自动断开
 )
-
 
 # ===================== 基础工具函数 =====================
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """批量文本嵌入，自动分批，避免超出接口单次上限。"""
     vectors = []
     for i in range(0, len(texts), EMBED_BATCH):
         batch = texts[i:i + EMBED_BATCH]
@@ -101,9 +81,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
         vectors.extend([d.embedding for d in resp.data])
     return vectors
 
-
 def split_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """简单按字符切块，带重叠。"""
     text = text.strip()
     if not text:
         return []
@@ -115,9 +93,7 @@ def split_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) 
         start += step
     return chunks
 
-
 def read_pdf_text(path: str) -> str:
-    """读取 PDF 全文文本。"""
     reader = PdfReader(path)
     parts = []
     for page in reader.pages:
@@ -127,19 +103,14 @@ def read_pdf_text(path: str) -> str:
             continue
     return "\n".join(parts)
 
-
 def chat_with_history(prompt: str, history: list = None, system: str = None, temperature: float = 0.2) -> str:
-    """支持多轮对话的请求函数"""
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
-        
     if history:
         for user_msg, bot_msg in history[-3:]:
             messages.append({"role": "user", "content": user_msg})
             messages.append({"role": "assistant", "content": bot_msg})
-            
-    # 加入当前问题
     messages.append({"role": "user", "content": prompt})
     
     resp = client.chat.completions.create(
@@ -149,14 +120,11 @@ def chat_with_history(prompt: str, history: list = None, system: str = None, tem
     )
     return resp.choices[0].message.content
 
-
 # ===================== 向量库构建 / 加载 =====================
 @st.cache_resource(show_spinner=False)
 def get_collection():
-    """返回 chromadb collection；若不存在则读 PDF 建库。"""
     db_client = chromadb.PersistentClient(path=PERSIST_DIR)
     collection = db_client.get_or_create_collection(name=COLLECTION_NAME)
-
     if collection.count() > 0:
         return collection
 
@@ -184,9 +152,7 @@ def get_collection():
     collection.add(documents=docs, embeddings=embeddings, ids=ids, metadatas=metas)
     return collection
 
-
 def retrieve(collection, query: str, k: int = TOP_K):
-    """向量检索，返回 [(文本, 来源), ...]。"""
     if collection.count() == 0:
         return []
     q_vec = embed_texts([query])[0]
@@ -197,7 +163,6 @@ def retrieve(collection, query: str, k: int = TOP_K):
     for d, m in zip(docs, metas):
         out.append((d, (m or {}).get("source", "未知来源")))
     return out
-
 
 # ===================== 初始化 =====================
 if not API_KEY or API_KEY.startswith("sk-在这里"):
@@ -217,15 +182,12 @@ SYSTEM_PROMPT = (
     "如果参考文档里没有相关内容，直接说明知识库暂未收录。"
 )
 
-
 # ===================== 左侧侧边栏导航 =====================
 st.sidebar.title(" 律简导航")
 st.sidebar.info("大学生校园权益智能咨询助手")
 
-# 创建左侧菜单列表
 menu_options = [" 权益问题咨询", " 上传 PDF 文件分析", "✍️ 申诉/协商文书生成"]
 choice = st.sidebar.radio("请选择功能模块：", menu_options)
-
 
 # ===================== 功能 1：知识库问答（带记忆） =====================
 if choice == " 权益问题咨询":
@@ -234,7 +196,7 @@ if choice == " 权益问题咨询":
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # 1. 展示之前的聊天记录
+    # 展示聊天记录
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
@@ -243,14 +205,13 @@ if choice == " 权益问题咨询":
                     for i, (txt, src) in enumerate(msg["sources"]):
                         st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
 
-    # 2. 底部聊天输入框
+    # 底部聊天输入框
     user_query = st.chat_input("描述你的校园/实习权益问题...")
 
     if user_query:
         with st.chat_message("user"):
             st.write(user_query)
         
-        # 提取历史对话传给大模型
         history_for_llm = [(m["content"], st.session_state.messages[i+1]["content"]) 
                            for i, m in enumerate(st.session_state.messages) 
                            if m["role"] == "user" and i+1 < len(st.session_state.messages)]
@@ -286,10 +247,8 @@ if choice == " 权益问题咨询":
                         for i, (txt, src) in enumerate(sources):
                             st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
             
-            # 记录历史
             st.session_state.messages.append({"role": "user", "content": user_query})
             st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
-
 
 # ===================== 功能 2：上传 PDF 文件分析 =====================
 elif choice == " 上传 PDF 文件分析":
@@ -332,7 +291,6 @@ elif choice == " 上传 PDF 文件分析":
                     st.write("### 分析结果：")
                     st.write(answer)
 
-
 # ===================== 功能 3：文书草稿生成 =====================
 elif choice == "✍️ 申诉/协商文书生成":
     st.subheader("✍️ 申诉/协商文书生成")
@@ -365,4 +323,4 @@ elif choice == "✍️ 申诉/协商文书生成":
                 data=bio.getvalue(),
                 file_name="维权申诉书草稿.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
+            )
