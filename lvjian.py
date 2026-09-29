@@ -160,47 +160,53 @@ SYSTEM_PROMPT = (
 )
 
 
+# ===================== 左侧侧边栏导航 =====================
+st.sidebar.title(" 律简导航")
+st.sidebar.info("大学生校园权益智能咨询助手")
+
+# 创建左侧菜单列表
+menu_options = [" 权益问题咨询", " 上传 PDF 文件分析", "✍️ 申诉/协商文书生成"]
+choice = st.sidebar.radio("请选择功能模块：", menu_options)
+
+
 # ===================== 功能 1：知识库问答（带记忆） =====================
-st.subheader(" 权益问题咨询")
-
-# 初始化聊天记录
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# 1. 展示之前的聊天记录
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
-        # 如果有引用文档，也展示出来
-        if "sources" in msg:
-            with st.expander("查看参考文档片段"):
-                for i, (txt, src) in enumerate(msg["sources"]):
-                    st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
-
-# 2. 接收用户输入（注意：这里换成了 st.chat_input，会有固定在底部的输入框）
-user_query = st.chat_input("描述你的校园/实习权益问题...")
-
-if user_query:
-    # 显示用户提问
-    with st.chat_message("user"):
-        st.write(user_query)
+if choice == " 权益问题咨询":
+    st.subheader(" 权益问题咨询")
     
-    # 获取历史对话，用于传给大模型
-    history_for_llm = [(m["content"], st.session_state.messages[i+1]["content"]) 
-                       for i, m in enumerate(st.session_state.messages) if m["role"] == "user" and i+1 < len(st.session_state.messages)]
+    # 初始化聊天记录
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-    with st.spinner("AI 检索知识库并生成回答..."):
-        # 检索知识库
-        hits = retrieve(collection, user_query, TOP_K)
+    # 1. 展示之前的聊天记录（在中间区域）
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+            if "sources" in msg and msg["sources"]:
+                with st.expander("查看参考文档片段"):
+                    for i, (txt, src) in enumerate(msg["sources"]):
+                        st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
+
+    # 2. 底部聊天输入框（固定在页面下方）
+    user_query = st.chat_input("描述你的校园/实习权益问题...")
+
+    if user_query:
+        with st.chat_message("user"):
+            st.write(user_query)
         
-        if not hits:
-            answer = "知识库暂未收录相关内容，无法回答。"
-            sources = []
-        else:
-            context = "\n\n".join(
-                f"【片段{i+1}｜来源：{src}】\n{txt}" for i, (txt, src) in enumerate(hits)
-            )
-            prompt = f"""请依据下面的参考文档回答用户问题。
+        # 提取历史对话传给大模型
+        history_for_llm = [(m["content"], st.session_state.messages[i+1]["content"]) 
+                           for i, m in enumerate(st.session_state.messages) 
+                           if m["role"] == "user" and i+1 < len(st.session_state.messages)]
+
+        with st.spinner("AI 检索知识库并生成回答..."):
+            hits = retrieve(collection, user_query, TOP_K)
+            
+            if not hits:
+                answer = "知识库暂未收录相关内容，无法回答。"
+                sources = []
+            else:
+                context = "\n\n".join(f"【片段{i+1}｜来源：{src}】\n{txt}" for i, (txt, src) in enumerate(hits))
+                prompt = f"""请依据下面的参考文档回答用户问题。
 
 【参考文档】
 {context}
@@ -212,51 +218,52 @@ if user_query:
 1. 用通俗语言解释，末尾注明引用来源；
 2. 文档没有相关内容就直接说"知识库暂未收录"，不要编造。
 3. 结合之前的对话历史理解用户的意图。"""
+                answer = chat_with_history(prompt, history=history_for_llm, system=SYSTEM_PROMPT)
+                sources = hits
+
+            # 显示 AI 回答（在中间区域）
+            with st.chat_message("assistant"):
+                st.write(answer)
+                if sources:
+                    with st.expander("查看参考文档片段"):
+                        for i, (txt, src) in enumerate(sources):
+                            st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
             
-            # 调用带记忆的 chat 函数
-            answer = chat_with_history(prompt, history=history_for_llm, system=SYSTEM_PROMPT)
-            sources = hits
-
-        # 显示 AI 回答
-        with st.chat_message("assistant"):
-            st.write(answer)
-            if sources:
-                with st.expander("查看参考文档片段"):
-                    for i, (txt, src) in enumerate(sources):
-                        st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
-        
-        # 3. 将本轮对话存入历史记录
-        st.session_state.messages.append({"role": "user", "content": user_query})
-        st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
+            # 记录历史
+            st.session_state.messages.append({"role": "user", "content": user_query})
+            st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
 
 
-# ===================== 功能 2：上传 PDF 分析 =====================
-st.subheader(" 上传 PDF 文件分析")
-upload_file = st.file_uploader("上传实习合同、学校通知 PDF", type="pdf")
+# ===================== 功能 2：上传 PDF 文件分析 =====================
+elif choice == " 上传 PDF 文件分析":
+    st.subheader(" 上传 PDF 文件分析")
+    st.write("上传实习合同、学校通知 PDF，AI 帮你找问题。")
+    
+    upload_file = st.file_uploader("点击选择 PDF 文件", type="pdf")
 
-if upload_file is not None:
-    temp_path = "temp_upload.pdf"
-    with open(temp_path, "wb") as f:
-        f.write(upload_file.getvalue())
+    if upload_file is not None:
+        temp_path = "temp_upload.pdf"
+        with open(temp_path, "wb") as f:
+            f.write(upload_file.getvalue())
 
-    question_for_pdf = st.text_input(
-        "针对该 PDF 你想问什么？（留空则默认分析风险条款）",
-        value="帮我找出这份文件的风险条款和不公平内容",
-    )
+        question_for_pdf = st.text_input(
+            "针对该 PDF 你想问什么？（留空则默认分析风险条款）",
+            value="帮我找出这份文件的风险条款和不公平内容",
+        )
 
-    if st.button("分析上传文件"):
-        with st.spinner("正在解析上传文件..."):
-            try:
-                text = read_pdf_text(temp_path)
-            except Exception as e:
-                st.error(f"PDF 解析失败：{e}")
-                text = ""
+        if st.button("开始分析该文件"):
+            with st.spinner("正在解析上传文件..."):
+                try:
+                    text = read_pdf_text(temp_path)
+                except Exception as e:
+                    st.error(f"PDF 解析失败：{e}")
+                    text = ""
 
-            if not text.strip():
-                st.error("未能从 PDF 中提取到文本（可能是扫描件/图片型 PDF）。")
-            else:
-                context = text[:6000] # 控制长度，避免超上下文
-                prompt = f"""你是一名校园权益顾问。请依据下面的文件内容回答用户问题，
+                if not text.strip():
+                    st.error("未能从 PDF 中提取到文本（可能是扫描件/图片型 PDF）。")
+                else:
+                    context = text[:6000]
+                    prompt = f"""你是一名校园权益顾问。请依据下面的文件内容回答用户问题，
 用通俗语言说明，并在末尾标注依据的原文片段。
 
 【文件内容】
@@ -264,25 +271,28 @@ if upload_file is not None:
 
 【用户问题】
 {question_for_pdf}"""
-                answer = chat_with_history(prompt, system=SYSTEM_PROMPT)
-                st.write("### 分析结果：")
-                st.write(answer)
+                    answer = chat_with_history(prompt, system=SYSTEM_PROMPT)
+                    st.write("### 分析结果：")
+                    st.write(answer)
 
 
 # ===================== 功能 3：文书草稿生成 =====================
-st.subheader("✍️ 申诉/协商文书生成")
-brief_info = st.text_area(
-    "填写你的情况，自动生成文书草稿：",
-    placeholder="例如：奖学金评审存在异议，希望提交申诉",
-)
+elif choice == "✍️ 申诉/协商文书生成":
+    st.subheader("✍️ 申诉/协商文书生成")
+    
+    brief_info = st.text_area(
+        "填写你的情况，自动生成文书草稿：",
+        placeholder="例如：奖学金评审存在异议，希望提交申诉",
+        height=150,
+    )
 
-if st.button("生成文书草稿") and brief_info.strip():
-    with st.spinner("正在生成文书..."):
-        prompt = f"""基于校园学籍、奖学金相关制度，根据下面用户情况，
+    if st.button("生成文书草稿") and brief_info.strip():
+        with st.spinner("正在生成文书..."):
+            prompt = f"""基于校园学籍、奖学金相关制度，根据下面用户情况，
 生成一份简洁正式的申诉/协商文书草稿。
 只输出文书正文，不要多余解释。
 
 用户情况：{brief_info}"""
-        draft = chat_with_history(prompt, temperature=0.3)
-        st.write("### 文书草稿：")
-        st.write(draft)
+            draft = chat_with_history(prompt, temperature=0.3)
+            st.write("### 文书草稿：")
+            st.write(draft)
