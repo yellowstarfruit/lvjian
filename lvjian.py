@@ -264,7 +264,7 @@ if upload_file is not None:
 
 【用户问题】
 {question_for_pdf}"""
-                answer = chat(prompt, system=SYSTEM_PROMPT)
+                answer = chat_with_history(prompt, system=SYSTEM_PROMPT)
                 st.write("### 分析结果：")
                 st.write(answer)
 
@@ -283,6 +283,6 @@ if st.button("生成文书草稿") and brief_info.strip():
 只输出文书正文，不要多余解释。
 
 用户情况：{brief_info}"""
-        draft = chat(prompt, temperature=0.3)
+        draft = chat_with_history(prompt, temperature=0.3)
         st.write("### 文书草稿：")
         st.write(draft)
