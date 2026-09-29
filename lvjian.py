@@ -186,7 +186,7 @@ SYSTEM_PROMPT = (
 st.sidebar.title(" 律简导航")
 st.sidebar.info("大学生校园权益智能咨询助手")
 
-menu_options = [" 权益问题咨询", " 上传 PDF 文件分析", " 申诉/协商文书生成"]
+menu_options = [" 权益问题咨询", " 上传 PDF 文件分析", "✍️ 申诉/协商文书生成"]
 choice = st.sidebar.radio("请选择功能模块：", menu_options)
 
 # ===================== 功能 1：知识库问答（带记忆） =====================
