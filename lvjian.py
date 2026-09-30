@@ -150,14 +150,13 @@ if choice == "权益问题咨询":
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    with st.container(height=450):
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.write(msg["content"])
-                if "sources" in msg and msg["sources"]:
-                    with st.expander("查看参考文档片段"):
-                        for i, (txt, src) in enumerate(msg["sources"]):
-                            st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+            if "sources" in msg and msg["sources"]:
+                with st.expander("查看参考文档片段"):
+                    for i, (txt, src) in enumerate(msg["sources"]):
+                        st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
     user_query=None
 
     # 底部聊天输入框
