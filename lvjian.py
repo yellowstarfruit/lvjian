@@ -38,10 +38,10 @@ st.markdown("""
     .stButton>button { background-color: #1E3A8A; color: white; border-radius: 8px; }
     .stButton>button:hover { background-color: #3B82F6; }
     .block-container {
-    padding-top: 2rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 95% !important;
-}
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 95% !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -157,7 +157,8 @@ if choice == "权益问题咨询":
                 with st.expander("查看参考文档片段"):
                     for i, (txt, src) in enumerate(msg["sources"]):
                         st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
-    user_query=None
+
+    user_query = None
 
     # 底部聊天输入框
     chat_input = st.chat_input("描述你的校园/实习权益问题...(例如：实习被拖欠工资怎么办)")
