@@ -206,7 +206,6 @@ if choice == " 📖权益问题咨询":
                     for i, (txt, src) in enumerate(msg["sources"]):
                         st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
 
-    # 底部聊天输入框
     # 新增：推荐问题按钮
     st.write(" 快捷提问：")
     col1, col2, col3 = st.columns(3)
