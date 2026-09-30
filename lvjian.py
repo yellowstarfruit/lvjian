@@ -205,7 +205,6 @@ if choice == "权益问题咨询":
             
             st.session_state.messages.append({"role": "user", "content": user_query})
             st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
-            st.session_state.quick_questions = random.sample(QUESTION_POOL, 3)
 
 # ===================== 功能 2：上传 PDF 文件分析 =====================
 elif choice == "上传 PDF 文件分析":
