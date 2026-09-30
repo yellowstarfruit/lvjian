@@ -208,17 +208,15 @@ if choice == " 📖权益问题咨询":
 
     # 底部聊天输入框
     # 新增：推荐问题按钮
-st.write(" 快捷提问：")
-col1, col2, col3 = st.columns(3)
-
-user_query = None
-
-if col1.button("实习被拖欠工资怎么办？"):
-    user_query = "实习被拖欠工资怎么办？"
-if col2.button("奖学金评定不公如何申诉？"):
-    user_query = "奖学金评定不公如何申诉？"
-if col3.button("学校有权没收违规电器吗？"):
-    user_query = "学校有权没收违规电器吗？"
+    st.write(" 快捷提问：")
+    col1, col2, col3 = st.columns(3)
+    user_query = None
+    if col1.button("实习被拖欠工资怎么办？"):
+        user_query = "实习被拖欠工资怎么办？"
+    if col2.button("奖学金评定不公如何申诉？"):
+        user_query = "奖学金评定不公如何申诉？"
+    if col3.button("学校有权没收违规电器吗？"):
+        user_query = "学校有权没收违规电器吗？"
 
 # 底部聊天输入框
 chat_input = st.chat_input("描述你的校园/实习权益问题...")
