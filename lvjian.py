@@ -35,14 +35,12 @@ CHUNK_OVERLAP = 100
 TOP_K = 3
 EMBED_BATCH = 20
 
-# 强制侧边栏展开，宽屏模式
 st.set_page_config(
     page_title="律简——大学生校园权益智能咨询助手",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 安全的美化代码
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -52,6 +50,11 @@ st.markdown("""
     [data-testid="stSidebar"] * { color: white !important; }
     .stButton>button { background-color: #1E3A8A; color: white; border-radius: 8px; }
     .stButton>button:hover { background-color: #3B82F6; }
+    .block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 95% !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -186,7 +189,7 @@ if choice == "权益问题咨询":
     if chat_input:
         user_query = chat_input
 
-    # 统一处理逻辑（这里的缩进非常关键，现在无论点按钮还是打字，都能触发！）
+    # 统一处理逻辑
     if user_query:
         with st.chat_message("user"):
             st.write(user_query)
@@ -266,7 +269,7 @@ elif choice == "申诉/协商文书生成":
             st.write("### 文书草稿：")
             st.write(draft)
             
-            # Word 生成逻辑（彻底修复了缩进，字体全部指定为宋体）
+            # Word 生成逻辑
             doc = docx.Document()
             style = doc.styles['Normal']
             style.font.name = '宋体'
@@ -277,7 +280,6 @@ elif choice == "申诉/协商文书生成":
                 run.font.name = '黑体'
                 run._element.rPr.rFonts.set(qn('w:eastAsia'), '黑体')
 
-            # 这个循环必须写在上面循环的外面！
             for para in draft.split('\n'):
                 if para.strip():
                     p = doc.add_paragraph(para)
