@@ -158,6 +158,7 @@ if choice == "权益问题咨询":
                     with st.expander("查看参考文档片段"):
                         for i, (txt, src) in enumerate(msg["sources"]):
                             st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
+    user_query=None
 
     # 底部聊天输入框
     chat_input = st.chat_input("描述你的校园/实习权益问题...(例如：实习被拖欠工资怎么办")
