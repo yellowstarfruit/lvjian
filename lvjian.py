@@ -161,7 +161,7 @@ if choice == "权益问题咨询":
     user_query=None
 
     # 底部聊天输入框
-    chat_input = st.chat_input("描述你的校园/实习权益问题...(例如：实习被拖欠工资怎么办")
+    chat_input = st.chat_input("描述你的校园/实习权益问题...(例如：实习被拖欠工资怎么办)")
     if chat_input:
         user_query = chat_input
 
