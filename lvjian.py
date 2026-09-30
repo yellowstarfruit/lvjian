@@ -1,6 +1,5 @@
 import os
 import io
-import random
 import streamlit as st
 from openai import OpenAI
 import chromadb
@@ -19,18 +18,6 @@ DOC_FOLDER = "./knowledge"
 COLLECTION_NAME = "lvjian_kb"
 
 CHUNK_SIZE = 800
-QUESTION_POOL = [
-    "实习被拖欠工资怎么办？",
-    "奖学金评定不公如何申诉？",
-    "学校有权没收违规电器吗？",
-    "毕业前学校扣押毕业证合法吗？",
-    "校园卡乱扣费如何维权？",
-    "被同学造谣诽谤如何维权？",
-    "勤工助学工资低于最低标准怎么办？",
-    "学校不让转专业合法吗？",
-    "考试作弊被开除可以申诉吗？",
-    "在校外租房学校有权处分吗？"
-]
 CHUNK_OVERLAP = 100
 TOP_K = 3
 EMBED_BATCH = 20
@@ -172,20 +159,8 @@ if choice == "权益问题咨询":
                         for i, (txt, src) in enumerate(msg["sources"]):
                             st.write(f"**【片段{i+1}｜{src}】** {txt[:300]}...")
 
-    # 动态推荐问题按钮
-    if "quick_questions" not in st.session_state:
-        st.session_state.quick_questions = random.sample(QUESTION_POOL, 3)
-        
-    st.write(" 快捷提问： ")
-    cols = st.columns(3)
-    user_query = None
-    
-    for i, q in enumerate(st.session_state.quick_questions):
-        with cols[i]:
-            if st.button(q, key=f"btn_{i}"):
-                user_query = q
     # 底部聊天输入框
-    chat_input = st.chat_input("描述你的校园/实习权益问题...")
+    chat_input = st.chat_input("描述你的校园/实习权益问题...(例如：实习被拖欠工资怎么办")
     if chat_input:
         user_query = chat_input
 
